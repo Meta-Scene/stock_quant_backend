@@ -24,7 +24,7 @@
     "ts_code", "trade_date", "open", "high", 
     "low", "close", "pre_close", "pct_chg", "vol"],
 
-  "date": "2024-01-12",
+  "date": "2024-01-121",
 
   "grid_data": [
                     [
