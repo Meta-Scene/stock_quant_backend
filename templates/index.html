@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Data</title>
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .date-controls {
+            margin: 10px 0;
+        }
+
+        .date-controls button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        /* 分页输入框样式 */
+        .pagination-controls {
+            margin: 10px 0;
+        }
+
+        .pagination-controls input {
+            margin: 0 5px;
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Stock Data</h1>
+
+    <div class="date-controls">
+        <button type="button" onclick="prevDay()">上一日</button>
+        <button type="button" onclick="nextDay()">下一日</button>
+        <form method="get">
+            <input type="date" name="target_date" id="target_date" value="{{ date or '' }}">
+            <button type="submit">提交日期</button>
+        </form>
+    </div>
+
+    {% if date %}
+    <p>当前查询日期：{{ date }}</p>
+    {% endif %}
+
+    <!-- 显示股票数量 -->
+    {% if stock_count %}
+    <p>本次查询的股票数量：{{ stock_count }}</p>
+    {% endif %}
+
+    {% if grid_data %}
+    <div class="grid-container">
+        {% for row in grid_data %}
+            {% for sub_data in row %}
+                <table>
+                    <thead>
+                        <tr>
+                            {% for column in column_names %}
+                            <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row_data in sub_data %}
+                        <tr>
+                            {% for value in row_data %}
+                            <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    <!-- 分页导航及输入框 -->
+    <div class="pagination-controls">
+        {% if page > 1 %}
+        <a href="?target_date={{ date }}&page={{ page - 1 }}">上一页</a>
+        {% endif %}
+        {% if page < total_pages %}
+        <a href="?target_date={{ date }}&page={{ page + 1 }}">下一页</a>
+        {% endif %}
+        <!-- 显示总页数 -->
+        <span>共{{ total_pages }}页</span>
+        <!-- 页码输入框 -->
+        <input type="number" id="page-input" min="1" value="{{ page }}" 
+               placeholder="输入页码" style="margin: 0 5px;">
+        <button onclick="goToPage()">跳转</button>
+    </div>
+    {% else %}
+    <p>No data available for the selected date.</p>
+    {% endif %}
+
+    <script>
+        function prevDay() {
+            const dateInput = document.getElementById('target_date');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() - 1);
+            dateInput.value = currentDate.toISOString().split('T')[0];
+            // 重新加载当前页
+            window.location.href = `/?target_date=${dateInput.value}&page={{ page }}`;
+        }
+
+        function nextDay() {
+            const dateInput = document.getElementById('target_date');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + 1);
+            dateInput.value = currentDate.toISOString().split('T')[0];
+            // 重新加载当前页
+            window.location.href = `/?target_date=${dateInput.value}&page={{ page }}`;
+        }
+
+        function goToPage() {
+            const pageInput = document.getElementById('page-input');
+            const page = pageInput.value; // 直接传递原始输入值
+            window.location.href = `/?target_date={{ date }}&page=${page}`;
+        }
+    </script>
+</body>
+
+</html>
