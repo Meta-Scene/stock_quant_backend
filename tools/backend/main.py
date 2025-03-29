@@ -1,8 +1,18 @@
 from flask import Flask, request, jsonify, render_template
-from database.database import Database
 from decimal import Decimal
+from flask_cors import CORS
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.abspath(os.path.join(current_dir, '../../'))
+sys.path.append(root_dir)
+from yeqiang.database.database import Database
+
 
 app = Flask(__name__)
+CORS(app)
+
 
 def get_filtered_data(data, column_names, desired_columns):
     """
@@ -62,10 +72,10 @@ def paginate_data(grouped_data, page):
     return grid_data, page, total_pages
 
 
-@app.route('/api.stock_data', methods=['GET'])
+@app.route('/', methods=['GET'])
 def get_stock_data():
     # 获取请求参数
-    date = request.args.get('target_date', '')
+    date = request.args.get('date', '')
     page = request.args.get('page', 1, type=int)
 
     # 定义需要保留的字段
@@ -74,7 +84,7 @@ def get_stock_data():
         'open', 'high', 'low', 'close',
         'pre_close', 'pct_chg', 'vol'
     ]
-
+    print(date,page)
     if date:
         # 将 yyyy-MM-dd 格式转换为 yyyyMMdd 格式
         date = date
@@ -82,9 +92,10 @@ def get_stock_data():
         date = '2024-01-02'
 
     # 构建动态 SQL 查询
-    n = 10
+    num_day = 20
+    target_pct=6
     tj = "and ts_code LIKE '%BJ'"
-    #tj = ''
+    tj = ''
     sql = f"""
     WITH FilteredStocks AS (
         SELECT *
@@ -103,14 +114,13 @@ def get_stock_data():
             ts_code,
             rn AS target_rn
         FROM NumberedStocks
-        WHERE trade_date = '{date}'
+        WHERE trade_date = '{date}' AND pct_chg > {target_pct}
     )
     SELECT ns.*
     FROM NumberedStocks ns
     JOIN TargetRows tr ON ns.ts_code = tr.ts_code
-    WHERE ns.rn BETWEEN tr.target_rn - {n} AND tr.target_rn + {n}
+    WHERE ns.rn BETWEEN tr.target_rn - {num_day} AND tr.target_rn + {num_day}
     """
-
     # 连接数据库并执行查询
     db = Database("stock")
     conn = db.connect()
@@ -142,5 +152,7 @@ def get_stock_data():
         stock_count=stock_count
     )
 
+
 if __name__ == '__main__':
-    app.run(port=1234, debug=False)
+    app.run(host='0.0.0.0', port=321, debug=False)
+    
