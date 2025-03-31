@@ -11,10 +11,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from yeqiang.database.database import Database
 from QuantitativeStrategys.stategy1.add_signal import add_signal
 
+
 app = Flask(__name__)
 CORS(app)
 
-n = 1
+n = 20
 target_pct = 6
 
 
@@ -28,7 +29,6 @@ def parse_date(date_str):
         return datetime.strptime(date_str, '%Y-%m-%d')
     except ValueError:
         return datetime.strptime('2024-10-22', '%Y-%m-%d')
-
 
 def execute_query(conn, date_str, n, target_pct, pct_type):
     """
@@ -59,7 +59,7 @@ def execute_query(conn, date_str, n, target_pct, pct_type):
             SUBSTRING(trade_date FROM 7 FOR 2) AS trade_date,
             open, high, low, close, pre_close, pct_chg::numeric, vol
         FROM public.all_stocks_days
-        WHERE 1=1 AND ts_code LIKE '%BJ'
+        WHERE 1=1
     ),
     NumberedStocks AS (
         SELECT 
@@ -88,7 +88,6 @@ def execute_query(conn, date_str, n, target_pct, pct_type):
     finally:
         cursor.close()
     return data
-
 
 def process_data(data, date_str, pct_type):
     """
@@ -122,7 +121,6 @@ def process_data(data, date_str, pct_type):
     result_arrays.sort(key=lambda x: pct_chg_dict.get(x[0][0], 0), reverse=pct_type)
     return result_arrays, pct_chg_dict
 
-
 def paginate_data(result_arrays, page):
     """
     对结果数组进行分页处理。
@@ -145,7 +143,6 @@ def paginate_data(result_arrays, page):
 
     stock_count = len(result_arrays)
     return paginated_data, total_pages, stock_count, page
-
 
 @app.route('/up_stop', methods=['GET'])
 def get_up_stop():
@@ -175,7 +172,6 @@ def get_up_stop():
                            page=page,
                            total_pages=total_pages, stock_count=stock_count)
 
-
 @app.route('/down_stop', methods=['GET'])
 def get_down_stop():
     # 获取请求中的日期参数，如果没有则使用默认日期
@@ -203,7 +199,6 @@ def get_down_stop():
     return jsonify(grid_data=paginated_data, columns=columns_to_keep, date=date_str,
                            page=page,
                            total_pages=total_pages, stock_count=stock_count)
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=321, debug=False)
