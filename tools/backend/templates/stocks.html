@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Stock Data</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 33%;
+            display: inline-table;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Stock Data</h2>
+    <div>
+        <label for="date">选择日期:</label>
+        <input type="date" id="date" name="date" value="{{ date }}">
+        <button onclick="prevDay()">上一天</button>
+        <button onclick="nextDay()">下一天</button>
+        <button onclick="submitDate()">查询</button>
+    </div>
+    <div id="stock-tables">
+        {% for stock_group in all_stocks %}
+        <table>
+            <caption>股票代码: {{ stock_group[0][0] }}</caption>
+            <tr>
+                {% for col in column_names %}
+                <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+            {% for stock_row in stock_group %}
+            <tr>
+                {% for value in stock_row %}
+                <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% endfor %}
+    </div>
+    <div>
+        <button onclick="prevPage()" {% if current_page == 1 %}disabled{% endif %}>上一页</button>
+        <span>第 {{ current_page }} 页，共 {{ total_pages }} 页</span>
+        <button onclick="nextPage()" {% if current_page == total_pages %}disabled{% endif %}>下一页</button>
+    </div>
+
+    <script>
+        function prevDay() {
+            const dateInput = document.getElementById('date');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() - 1);
+            const newDate = currentDate.toISOString().split('T')[0];
+            dateInput.value = newDate;
+        }
+
+        function nextDay() {
+            const dateInput = document.getElementById('date');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + 1);
+            const newDate = currentDate.toISOString().split('T')[0];
+            dateInput.value = newDate;
+        }
+
+        function submitDate() {
+            const dateInput = document.getElementById('date');
+            const selectedDate = dateInput.value;
+            window.location.href = `/?date=${selectedDate}&page=1`;
+        }
+
+        function prevPage() {
+            const currentPage = {{ current_page }};
+            const newPage = currentPage - 1;
+            const date = document.getElementById('date').value;
+            window.location.href = `/?date=${date}&page=${newPage}`;
+        }
+
+        function nextPage() {
+            const currentPage = {{ current_page }};
+            const newPage = currentPage + 1;
+            const date = document.getElementById('date').value;
+            window.location.href = `/?date=${date}&page=${newPage}`;
+        }
+    </script>
+</body>
+
+</html>
+    

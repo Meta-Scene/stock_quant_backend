@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock grid_data</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .date-controls {
+            margin-bottom: 20px;
+        }
+
+        .date-controls button {
+            margin-right: 10px;
+        }
+
+        .table-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .pagination {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="date-controls">
+        <button onclick="prevDay()">上一天</button>
+        <input type="date" id="datepicker" value="{{ date }}"
+            onchange="window.location.href='/down_stop?date=' + this.value">
+        <button onclick="nextDay()">下一天</button>
+    </div>
+    <h1>Stock Stock Data</h1>
+    <p>股票总数: {{ stock_count }}</p>
+    <p>页码总数: {{ total_pages }}</p>
+    <div class="table-container">
+        {% for group in grid_data %}
+        <table>
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in group %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+    <div class="pagination">
+        <button onclick="prevPage()" {% if page == 1 %}disabled{% endif %}>上一页</button>
+        <input type="number" id="page-input" value="{{ page }}" min="1" max="{{ total_pages }}">
+        <button onclick="goToPage()">跳转</button>
+        <button onclick="nextPage()" {% if page == total_pages %}disabled{% endif %}>下一页</button>
+    </div>
+    <script>
+        function prevDay() {
+            let currentDate = new Date("{{ date }}");
+            let prevDate = new Date(currentDate);
+            prevDate.setDate(prevDate.getDate() - 1);
+            let formattedDate = prevDate.toISOString().split('T')[0];
+            window.location.href = `/down_stop?date=${formattedDate}&page=1`;
+        }
+
+        function nextDay() {
+            let currentDate = new Date("{{ date }}");
+            let nextDate = new Date(currentDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+            let formattedDate = nextDate.toISOString().split('T')[0];
+            window.location.href = `/down_stop?date=${formattedDate}&page=1`;
+        }
+
+        function prevPage() {
+            let currentPage = parseInt("{{ page }}");
+            let newPage = currentPage - 1;
+            window.location.href = `/down_stop?date={{ date }}&page=${newPage}`;
+        }
+
+        function nextPage() {
+            let currentPage = parseInt("{{ page }}");
+            let newPage = currentPage + 1;
+            window.location.href = `/down_stop?date={{ date }}&page=${newPage}`;
+        }
+
+        function goToPage() {
+            let inputPage = document.getElementById('page-input').value;
+            window.location.href = `/down_stop?date={{ date }}&page=${inputPage}`;
+        }
+    </script>
+</body>
+
+</html>

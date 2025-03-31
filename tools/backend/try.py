@@ -14,7 +14,7 @@ from QuantitativeStrategys.stategy1.add_signal import add_signal
 app = Flask(__name__)
 CORS(app)
 
-n = 1
+n = 10
 target_pct = 6
 
 
@@ -30,7 +30,7 @@ def parse_date(date_str):
         return datetime.strptime('2024-10-22', '%Y-%m-%d')
 
 
-def execute_query(conn, date_str, n, target_pct, pct_type):
+def execute_query(conn, date_str, n, target_pct, type):
     """
     执行 SQL 查询并返回结果。
     :param conn: 数据库连接对象
@@ -45,10 +45,10 @@ def execute_query(conn, date_str, n, target_pct, pct_type):
         'pre_close', 'pct_chg', 'vol'
     ]
     columns_str = ', '.join([f'ns.{col}' for col in desired_columns])
-    if pct_type:
-        pct_type = '> '
+    if type:
+        type = '> '
     else:
-        pct_type = '< -'
+        type = '< -'
     sql = f"""
     WITH FilteredStocks AS (
         SELECT 
@@ -72,13 +72,14 @@ def execute_query(conn, date_str, n, target_pct, pct_type):
             ts_code,
             rn AS target_rn
         FROM NumberedStocks
-        WHERE trade_date = '{date_str}' AND pct_chg::numeric {pct_type}{target_pct}
+        WHERE trade_date = '{date_str}' AND pct_chg::numeric {type}{target_pct}
     )
     SELECT {columns_str}, ns.rn
     FROM NumberedStocks ns
     JOIN TargetRows tr ON ns.ts_code = tr.ts_code
     WHERE ns.rn BETWEEN tr.target_rn - {n} AND tr.target_rn + {n}
     """
+
     try:
         cursor.execute(sql)
         data = cursor.fetchall()
@@ -90,7 +91,7 @@ def execute_query(conn, date_str, n, target_pct, pct_type):
     return data
 
 
-def process_data(data, date_str, pct_type):
+def process_data(data, date_str, type):
     """
     处理查询结果，包括数据类型转换、分组处理和排序。
     :param data: 查询结果
@@ -118,8 +119,8 @@ def process_data(data, date_str, pct_type):
         current_date_data = processed_group[processed_group['trade_date'] == date_str]
         if not current_date_data.empty:
             pct_chg_dict[name] = current_date_data['pct_chg'].values[0]
-    pct_type = True if pct_type == 1 else False
-    result_arrays.sort(key=lambda x: pct_chg_dict.get(x[0][0], 0), reverse=pct_type)
+    type = True if type == 1 else False
+    result_arrays.sort(key=lambda x: pct_chg_dict.get(x[0][0], 0), reverse=True)
     return result_arrays, pct_chg_dict
 
 
@@ -153,25 +154,25 @@ def get_up_stop():
     date_str = request.args.get('date', '2024-10-22')
     page = request.args.get('page', 1, type=int)
     date = parse_date(date_str)  # 检查日期
-    pct_type = True
+    type = 1
     # 连接数据库并执行查询
     db = Database("stock")
     try:
         conn = db.connect()
-        data = execute_query(conn, date_str, n, target_pct, pct_type)
+        data = execute_query(conn, date_str, n, target_pct, type)
         conn.close()
     except Exception as e:
         print(f"数据库连接出错: {e}")
         return jsonify(error="数据库连接出错"), 500
 
     # 处理数据
-    result_arrays, pct_chg_dict = process_data(data, date_str, pct_type)
+    result_arrays, pct_chg_dict = process_data(data, date_str, type)
 
     # 分页逻辑
     paginated_data, total_pages, stock_count, page = paginate_data(result_arrays, page)
 
     columns_to_keep = ['ts_code', 'trade_date', 'open', 'high', 'low', 'close', 'pre_close', 'pct_chg', 'vol', 'bay']
-    return jsonify(grid_data=paginated_data, columns=columns_to_keep, date=date_str,
+    return render_template("index1.html", grid_data=paginated_data, columns=columns_to_keep, date=date_str,
                            page=page,
                            total_pages=total_pages, stock_count=stock_count)
 
@@ -182,28 +183,28 @@ def get_down_stop():
     date_str = request.args.get('date', '2024-10-22')
     page = request.args.get('page', 1, type=int)
     date = parse_date(date_str)  # 检查日期
-    pct_type = False
+    type = 0
     # 连接数据库并执行查询
     db = Database("stock")
     try:
         conn = db.connect()
-        data = execute_query(conn, date_str, n, target_pct, pct_type)
+        data = execute_query(conn, date_str, n, target_pct, type)
         conn.close()
     except Exception as e:
         print(f"数据库连接出错: {e}")
         return jsonify(error="数据库连接出错"), 500
 
     # 处理数据
-    result_arrays, pct_chg_dict = process_data(data, date_str, pct_type)
+    result_arrays, pct_chg_dict = process_data(data, date_str, type)
 
     # 分页逻辑
     paginated_data, total_pages, stock_count, page = paginate_data(result_arrays, page)
 
     columns_to_keep = ['ts_code', 'trade_date', 'open', 'high', 'low', 'close', 'pre_close', 'pct_chg', 'vol', 'bay']
-    return jsonify(grid_data=paginated_data, columns=columns_to_keep, date=date_str,
+    return render_template("index2.html", grid_data=paginated_data, columns=columns_to_keep, date=date_str,
                            page=page,
                            total_pages=total_pages, stock_count=stock_count)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=321, debug=False)
+    app.run(host='0.0.0.0', port=3211, debug=False)
