@@ -50,10 +50,10 @@ class pgsql(object):
         create_table_query = f"""
             CREATE TABLE {table_name} (
                 id SERIAL PRIMARY KEY,
-                {', '.join(column_definitions)},
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                {', '.join(column_definitions)}
             );
         """
+
         try:
             self.cur.execute(create_table_query)
             self.cnn.commit()
@@ -82,7 +82,7 @@ class pgsql(object):
             try:
                 self.cur.execute(insert_statement, list(row))
                 self.cnn.commit()
-                print(f"第 {index} 行数据插入成功。")
+                #print(f"第 {index} 行数据插入成功。")
             except psycopg2.Error as e:
                 print(f"插入第 {index} 行数据时出错: {e}，数据: {list(row)}")
                 self.cnn.rollback()
