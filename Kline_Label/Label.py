@@ -209,18 +209,8 @@ class KLineProcessor:
         # 替换指定列中的值
         self.data['Fmark'] = self.data['Fmark'].replace(replace_dict)
 
-        # 数据类型映射
-        dtype_mapping = {
-            'trade_date': 'datetime64[ns]',  # 日期列
-            'open': 'float32',  # 开盘价
-            'high': 'float32',  # 最高价
-            'low': 'float32',  # 最低价
-            'close': 'float32',  # 价格列
-            'Fmark': 'int',  # 标签
-            'Fval': 'float32',
-            'pre_close': 'float32'  # 前日收盘价
-        }
-        self.data = self.data.astype(dtype_mapping)
+        # 将该列转换为整数类型
+        self.data['Fmark'] = self.data['Fmark'].astype(int)
 
         #print("数据标注完毕")
 
