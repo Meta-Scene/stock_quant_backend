@@ -148,6 +148,9 @@ def paginate_data(result_arrays, page):
     return paginated_data, total_pages, stock_count, page
 
 
+@app.route('/1', methods=['GET'])
+def sda():
+    print(1)
 @app.route('/up_stop', methods=['GET'])
 def get_up_stop():
     # 获取请求中的日期参数，如果没有则使用默认日期
