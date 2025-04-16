@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>股票数据分析平台</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <div id="app">
+    <el-container>
+      <el-header>
+        <h1>股票数据分析平台</h1>
+      </el-header>
+
+      <el-main>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-card>
+              <template #header>
+                <div class="clearfix">
+                  <span>数据筛选</span>
+                </div>
+              </template>
+              <el-form :inline="true" :model="searchForm" class="demo-form-inline">
+                <el-form-item label="股票代码">
+                  <el-input v-model="searchForm.tsCode" placeholder="股票代码"></el-input>
+                </el-form-item>
+                <el-form-item label="日期">
+                  <el-date-picker v-model="searchForm.tradeDate" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD"></el-date-picker>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadAllData">查询全部数据</el-button>
+                  <el-button type="success" @click="loadLimitUpData">查询涨停数据</el-button>
+                  <el-button type="danger" @click="loadLimitDownData">查询跌停数据</el-button>
+                  <el-button type="warning" @click="loadHalfYearLineData">查询半年线数据（±1年）</el-button>
+                  <el-button type="info" @click="loadYearLineData">查询年线数据（±3年）</el-button>
+                </el-form-item>
+              </el-form>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" style="margin-top: 20px;" v-if="stockResponse">
+          <el-col :span="24">
+            <el-card>
+              <template #header>
+                <div class="clearfix">
+                  <span>数据概览</span>
+                  <span style="float: right">
+                    查询日期: {{ stockResponse.date }}
+                    | 股票数量: {{ stockResponse.stock_count }}
+                    | 当前页: {{ stockResponse.page }}
+                  </span>
+                </div>
+              </template>
+
+              <div class="pagination-container">
+                <el-pagination @current-change="handlePageChange" :current-page="stockResponse.page"
+                  :page-size="stockResponse.grid_data ? stockResponse.grid_data.length : 0"
+                  :total="stockResponse.stock_count" layout="total, prev, pager, next">
+                </el-pagination>
+              </div>
+
+              <el-alert type="info" show-icon :closable="false" title="提示：图表支持缩放和滚动查看"
+                description="在图表区域滚动鼠标滚轮或使用下方滑块可查看全部日期数据。双击图表可还原视图。" style="margin-bottom: 15px;">
+              </el-alert>
+
+              <el-alert v-if="currentDataType === 'halfYearLine'" type="warning" show-icon :closable="false"
+                title="半年线数据说明" description="显示的是选定日期前后一年的数据（约250个交易日），可通过缩放查看完整数据。" style="margin-bottom: 15px;">
+              </el-alert>
+
+              <el-alert v-if="currentDataType === 'yearLine'" type="info" show-icon :closable="false" title="年线数据说明"
+                description="显示的是选定日期前后三年的数据（约750个交易日），可通过缩放查看完整数据。" style="margin-bottom: 15px;">
+              </el-alert>
+
+              <el-tabs v-model="activeTab" type="card">
+                <el-tab-pane v-for="(stockData, index) in stockResponse.grid_data" :key="index"
+                  :label="getStockCodeByIndex(index)" :name="index">
+                  <div class="stock-info">
+                    <h3>{{ getStockCodeByIndex(index) }}</h3>
+
+                    <!-- 股票价格走势图 -->
+                    <div class="chart-container" :id="'chart-' + index"></div>
+
+                    <!-- 股票数据表格 -->
+                    <el-table :data="getStockDataByIndex(index)" stripe style="width: 100%" max-height="400">
+                      <el-table-column label="日期" width="120">
+                        <template #default="scope">{{ scope.row[1] }}</template>
+                      </el-table-column>
+                      <el-table-column label="开盘价" width="100">
+                        <template #default="scope">{{ scope.row[2] }}</template>
+                      </el-table-column>
+                      <el-table-column label="最高价" width="100">
+                        <template #default="scope">{{ scope.row[3] }}</template>
+                      </el-table-column>
+                      <el-table-column label="最低价" width="100">
+                        <template #default="scope">{{ scope.row[4] }}</template>
+                      </el-table-column>
+                      <el-table-column label="收盘价" width="100">
+                        <template #default="scope">{{ scope.row[5] }}</template>
+                      </el-table-column>
+                      <el-table-column label="前收盘" width="100">
+                        <template #default="scope">{{ scope.row[6] }}</template>
+                      </el-table-column>
+                      <el-table-column label="涨跌幅%" width="100">
+                        <template #default="scope">
+                          <span :class="{'positive': scope.row[7] > 0, 'negative': scope.row[7] < 0}">
+                            {{ formatPercent(scope.row[7]) }}
+                          </span>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="成交量" width="120">
+                        <template #default="scope">{{ formatVolume(scope.row[8]) }}</template>
+                      </el-table-column>
+                      <el-table-column label="MA5" width="100">
+                        <template #default="scope">{{ scope.row[11] }}</template>
+                      </el-table-column>
+                      <el-table-column label="MA10" width="100">
+                        <template #default="scope">{{ scope.row[12] }}</template>
+                      </el-table-column>
+                      <el-table-column v-if="currentDataType === 'halfYearLine'" label="半年线" width="100">
+                        <template #default="scope">{{ scope.row[13] }}</template>
+                      </el-table-column>
+                      <el-table-column v-if="currentDataType === 'yearLine'" label="年线" width="100">
+                        <template #default="scope">{{ scope.row[14] }}</template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
+                </el-tab-pane>
+              </el-tabs>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" style="margin-top: 20px;" v-if="!stockResponse">
+          <el-col :span="24">
+            <el-empty description="暂无数据，请选择查询条件"></el-empty>
+          </el-col>
+        </el-row>
+      </el-main>
+
+      <el-footer>
+        <p>&copy; 2024 股票数据分析平台 - 版权所有</p>
+      </el-footer>
+    </el-container>
+  </div>
+
+  <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/element-plus"></script>
+  <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
