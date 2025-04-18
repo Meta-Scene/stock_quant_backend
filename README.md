@@ -88,6 +88,7 @@ url:`http://172.16.32.93:10015/stock_fmark`
   ],
 ```
 # Java部分后端接口
+## 最终版
 所有：`http://120.27.208.55:8080/api/stock/data`
 
 涨停：`http://120.27.208.55:8080/api/stock/limit-up`
@@ -98,7 +99,7 @@ url:`http://172.16.32.93:10015/stock_fmark`
 
 年线：`http://120.27.208.55:8080/api/stock/year-line`
 
-返回数据格式全部都是：
+返回数据格式全部改成：
 ```
 {
   "columns": [
@@ -117,4 +118,31 @@ url:`http://172.16.32.93:10015/stock_fmark`
     "name"
   ],
 ```
+
+## 当前版本
+目前看到的服务器版本是：
+
+```
+  "column_names": [
+    "ts_code",
+    "trade_date",
+    "open",
+    "high",
+    "low",
+    "close",
+    "pre_close",
+    "pct_chg",
+    "vol",
+    "bay",
+    "ma5",
+    "ma10",
+    "ma120",
+    "ma250"
+  ],
+```
+
+局域网ip：
+`172.16.32.88`
+
+
 
