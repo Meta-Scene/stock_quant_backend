@@ -19,8 +19,8 @@ def clean_nan_for_json(data):
 
 # 数据库配置
 db_config = {
-    "host": "25.tcp.cpolar.top",
-    "port": 11324,
+    "host": "15858739883.gnway.cc",
+    "port": 31731,
     "database": "stock",
     "user": "postgres",
     "password": "123456"
